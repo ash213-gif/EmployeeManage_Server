@@ -61,3 +61,23 @@ exports.login = async (req, res) => {
     return res.status(200).send({ token, status: true, msg: ' login succesfully' })
   } catch (e) { return res.status(500).send({ status: false, msg: e.message }) }
 }
+
+
+
+exports.userdelete= async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await UserSchema.findById(id);
+
+    if (!user) {
+      return res.status(404).send({ status: false, msg: 'User not found' });
+    }
+
+    user.isdelete = true;
+    await user.save();
+
+    return res.status(200).send({ status: true, msg: 'User deleted successfully' });
+  } catch (e) {
+    return res.status(500).send({ status: false, msg: e.message });
+  }
+}

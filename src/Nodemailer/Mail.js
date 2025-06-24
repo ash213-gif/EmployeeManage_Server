@@ -33,7 +33,7 @@ exports.sendmail = async (name, email , otp)=> {
     html: `<b>Hello world? ${email} ${otp}</b>`, // HTML body
   });
 
-  console.log("Message sent:", info.messageId);
+  // console.log("Message sent:", info.messageId);
   } catch (error) {
     console.error("Error sending email:", error);
   }
