@@ -2,15 +2,17 @@ const express = require('express');
 require('dotenv').config();
 const app = express();
 const mongoose = require('mongoose');
+const cors = require('cors');
 const routes = require('./routes/routes')
 const taskroutes = require('./routes/taskrooutes');
 
+app.use(cors());
 app.use(express.json());
 
 const port = process.env.PORT || 4040;
 
 app.use('/', routes);
-app.use('/tasks', taskroutes);
+app.use('/', taskroutes);
 
 mongoose.connect ( process.env.MongoDBurl )
 .then(()=>{ console.log('mongoDB  is cooneted '); })
