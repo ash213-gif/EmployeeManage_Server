@@ -7,7 +7,7 @@ const routes = require('./routes/routes')
 const taskroutes = require('./routes/taskrooutes');
 
 app.use(cors({
-    origin:[ 'employe-manage-front.vercel.app','http://localhost:5173' ]
+    origin:[ 'https://employe-manage-front.vercel.app','http://localhost:5173' ]
 }));
 app.use(express.json());
 
