@@ -6,7 +6,9 @@ const cors = require('cors');
 const routes = require('./routes/routes')
 const taskroutes = require('./routes/taskrooutes');
 
-app.use(cors());
+app.use(cors({
+    origin:[ 'employe-manage-front.vercel.app','http://localhost:5173' ]
+}));
 app.use(express.json());
 
 const port = process.env.PORT || 4040;
