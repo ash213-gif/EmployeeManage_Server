@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
 const {sendmail} = require('../Nodemailer/Mail')
+const { param } = require('../routes/routes')
 
 
 exports.UserCreate = async (req, res) => {
@@ -29,7 +30,7 @@ exports.UserCreate = async (req, res) => {
   
     const newdata = await UserSchema.create(data)
 
-    return res.status(200).send({ user: newdata, status: true, msg: 'user create d successfully ' })
+    return res.status(200).send({ user: newdata, status: true, msg: 'user created successfully ' })
 
   } catch (e) { return res.status(500).send({ status: false, msg: e.message }) }
 
@@ -80,4 +81,24 @@ exports.userdelete= async (req, res) => {
   } catch (e) {
     return res.status(500).send({ status: false, msg: e.message });
   }
+}
+
+
+exports.verifyotp=(req,res)=>{
+  try{
+    const id= req.params;
+    const { otp }= req.body;
+
+    const checkuser= UserSchema.findById( id)
+    if(!checkuser) { return res.status(400).send({status:false, msg:'user not found '})}
+
+    console.log(checkuser);
+
+
+
+
+
+  }
+  catch(e){ return res.status(500).send({ status: false, msg: e.message }) }
+
 }
