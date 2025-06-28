@@ -3,7 +3,6 @@ const bcrypt = require('bcrypt')
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
 const {sendmail} = require('../Nodemailer/Mail')
-const { param } = require('../routes/routes')
 
 
 exports.UserCreate = async (req, res) => {
@@ -83,22 +82,41 @@ exports.userdelete= async (req, res) => {
   }
 }
 
+const mongoose = require('mongoose');
 
-exports.verifyotp=(req,res)=>{
-  try{
-    const id= req.params;
-    const { otp }= req.body;
+exports.verifyotp = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { otp } = req.body;
 
-    const checkuser= UserSchema.findById( id)
-    if(!checkuser) { return res.status(400).send({status:false, msg:'user not found '})}
+    console.log('Received id:', id);
 
-    console.log(checkuser);
+    if (!id) {
+      return res.status(400).send({ status: false, msg: 'id is required' });
+    }
+    if (!otp) {
+      return res.status(400).send({ status: false, msg: 'otp is required' });
+    }
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send({ status: false, msg: 'Invalid user id' });
+    }
 
+    const checkuser = await UserSchema.findById(id);
+    console.log('User:', checkuser);
 
+    if (!checkuser) {
+      return res.status(400).send({ status: false, msg: 'user not found' });
+    }
 
+    if (String(checkuser.otp) !== String(otp)) {
+      return res.status(400).send({ status: false, msg: 'wrong otp' });
+    }
 
+    checkuser.isverify = true;
+    await checkuser.save();
 
+    return res.status(200).send({ status: true, msg: 'OTP verified successfully' });
+  } catch (e) {
+    return res.status(500).send({ status: false, msg: e.message });
   }
-  catch(e){ return res.status(500).send({ status: false, msg: e.message }) }
-
-}
+};
