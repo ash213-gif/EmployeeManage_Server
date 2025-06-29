@@ -2,32 +2,38 @@ const UserSchema = require('../Module/UserSchem')
 const bcrypt = require('bcrypt')
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
-const {sendmail} = require('../Nodemailer/Mail')
+const { sendmail } = require('../Nodemailer/Mail')
 
 
 exports.UserCreate = async (req, res) => {
   try {
     const data = req.body;
     const { name, email, password } = data;
+    const {ProfileImg}=req.file;
+    console.log(ProfileImg);
 
     if (!name) { return res.status(400).send({ status: false, msg: 'please provide a name ' }) }
     if (!email) { return res.status(400).send({ status: false, msg: 'please provide a email ' }) }
     if (!password) { return res.status(400).send({ status: false, msg: 'please provide a password ' }) }
+if(!ProfileImg) { return res.status(400).send({status:false ,msg:'Image is required ' }) }
 
-    const Finduser = await UserSchema.find({ email: email })
+    const Finduser = await UserSchema.findOne({ email: email })
 
-    if (Finduser.isverify === true) { return res.status(400).send({ status: false, msg: 'you are alreadyy exits ' }) }
+    if (Finduser) { return res.status(400).send({ status: false, msg: 'You are alraedy exists' }) }
+    if (Finduser.isverify === true) { return res.status(400).send({ status: false, msg: 'please verify first  ' }) }
     if (Finduser.isdelete === true) { return res.status(400).send({ status: false, msg: 'you accounst is deleted  ' }) }
 
-    const randomOtp=  await  Math.floor(100000 + Math.random() * 900000);
+    const randomOtp = await Math.floor(100000 + Math.random() * 900000);
     data.otp = randomOtp;
     await sendmail(name, email, randomOtp);
 
     const bcryptPassword = await bcrypt.hash(password, 10)
     data.password = bcryptPassword
 
-  
-    const newdata = await UserSchema.create(data)
+
+    const newdata = await UserSchema.create({
+      ProfileImg:ProfileImg.path
+    })
 
     return res.status(200).send({ user: newdata, status: true, msg: 'user created successfully ' })
 
@@ -64,7 +70,7 @@ exports.login = async (req, res) => {
 
 
 
-exports.userdelete= async (req, res) => {
+exports.userdelete = async (req, res) => {
   try {
     const { id } = req.params;
     const user = await UserSchema.findById(id);
@@ -82,14 +88,11 @@ exports.userdelete= async (req, res) => {
   }
 }
 
-const mongoose = require('mongoose');
 
 exports.verifyotp = async (req, res) => {
   try {
     const { id } = req.params;
     const { otp } = req.body;
-
-    console.log('Received id:', id);
 
     if (!id) {
       return res.status(400).send({ status: false, msg: 'id is required' });
@@ -97,26 +100,29 @@ exports.verifyotp = async (req, res) => {
     if (!otp) {
       return res.status(400).send({ status: false, msg: 'otp is required' });
     }
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).send({ status: false, msg: 'Invalid user id' });
-    }
 
     const checkuser = await UserSchema.findById(id);
-    console.log('User:', checkuser);
 
     if (!checkuser) {
       return res.status(400).send({ status: false, msg: 'user not found' });
     }
 
-    if (String(checkuser.otp) !== String(otp)) {
+    if (checkuser.isverify === true) {
+      return res.status(400).send({ status: false, msg: 'you are already verified please login ' });
+    }
+    if (checkuser.isdelete === true) {
+      return res.status(400).send({ status: false, msg: 'you account is deleted please contact admin' });
+    }
+
+
+    if (checkuser.otp !== otp) {
       return res.status(400).send({ status: false, msg: 'wrong otp' });
     }
 
-    checkuser.isverify = true;
+    await UserSchema.findByIdAndUpdate(id, { isverify: true }, { new: true });
     await checkuser.save();
-
     return res.status(200).send({ status: true, msg: 'OTP verified successfully' });
   } catch (e) {
-    return res.status(500).send({ status: false, msg: e.message });
+    return res.status(500).send({ status: false, message: e.message });
   }
 };
