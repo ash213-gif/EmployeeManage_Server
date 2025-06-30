@@ -10,7 +10,7 @@ const storage = multer.diskStorage({});
 
 const upload = multer({ storage: storage });
 
-// users routes CRUD operations 
+
 
  // users routes CRUD operations 
 route.post('/signup', upload.single('ProfileImg') ,UserCreate)
