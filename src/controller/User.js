@@ -15,7 +15,7 @@ exports.UserCreate = async (req, res) => {
     if (!name) { return res.status(400).send({ status: false, msg: 'please provide a name ' }) }
     if (!email) { return res.status(400).send({ status: false, msg: 'please provide a email ' }) }
     if (!password) { return res.status(400).send({ status: false, msg: 'please provide a password ' }) }
-    if (!ProfileImg) { return res.status(400).send({ status: false, msg: 'Image is required ' }) }
+    // if (!ProfileImg) { return res.status(400).send({ status: false, msg: 'Image is required ' }) }
 const Finduser = await UserSchema.findOne({ email: email });
 
 if (Finduser) {
@@ -34,17 +34,17 @@ if (Finduser) {
     const bcryptPassword = await bcrypt.hash(password, 10)
     data.password = bcryptPassword
 
-    let ImgUrl='';
-    if(ProfileImg){
-       ImgUrl =  await  UploadCloudary(ProfileImg)
-      console.log(ImgUrl.url);
-    }
+    // let ImgUrl='';
+    // if(ProfileImg){
+    //    ImgUrl =  await  UploadCloudary(ProfileImg)
+    //   console.log(ImgUrl.url);
+    // }
 
     const newdata = await UserSchema.create({
       name,
       email,
       password,
-      ProfileImg: ImgUrl.url
+      // ProfileImg: ImgUrl.url
     })
 
     return res.status(200).send({ user: newdata, status: true, msg: 'user created successfully ' })
