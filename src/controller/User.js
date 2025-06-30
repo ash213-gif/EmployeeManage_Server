@@ -3,54 +3,49 @@ const bcrypt = require('bcrypt')
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
 const { sendmail } = require('../Nodemailer/Mail')
-const {UploadCloudary} =require('../Cloundnary/ImageUrl')
+
 
 exports.UserCreate = async (req, res) => {
   try {
     const data = req.body;
     const { name, email, password } = data;
-    const ProfileImg = req.file;
-    
+    // const ProfileImg = req.file ? req.file.path : undefined;
 
-    if (!name) { return res.status(400).send({ status: false, msg: 'please provide a name ' }) }
-    if (!email) { return res.status(400).send({ status: false, msg: 'please provide a email ' }) }
-    if (!password) { return res.status(400).send({ status: false, msg: 'please provide a password ' }) }
-    // if (!ProfileImg) { return res.status(400).send({ status: false, msg: 'Image is required ' }) }
-const Finduser = await UserSchema.findOne({ email: email });
+    if (!name) return res.status(400).send({ status: false, msg: 'please provide a name ' });
+    if (!email) return res.status(400).send({ status: false, msg: 'please provide a email ' });
+    if (!password) return res.status(400).send({ status: false, msg: 'please provide a password ' });
+    // if (!ProfileImg) return res.status(400).send({ status: false, msg: 'Image is required ' });
 
-if (Finduser) {
-  if (Finduser.isverify === true) {
-    return res.status(400).send({ status: false, msg: 'please verify first' });
-  }
-  if (Finduser.isdelete === true) {
-    return res.status(400).send({ status: false, msg: 'your account is deleted' });
-  }
-  return res.status(400).send({ status: false, msg: 'You already exist' });
-}
-    const randomOtp = await Math.floor(100000 + Math.random() * 900000);
-    data.otp = randomOtp;
+    const Finduser = await UserSchema.findOne({ email: email });
+
+    if (Finduser) {
+      if (Finduser.isverify === true) {
+        return res.status(400).send({ status: false, msg: 'please verify first' });
+      }
+      if (Finduser.isdelete === true) {
+        return res.status(400).send({ status: false, msg: 'your account is deleted' });
+      }
+      return res.status(400).send({ status: false, msg: 'You already exist' });
+    }
+
+    const randomOtp = Math.floor(100000 + Math.random() * 900000);
+
     await sendmail(name, email, randomOtp);
 
-    const bcryptPassword = await bcrypt.hash(password, 10)
-    data.password = bcryptPassword
+    const bcryptPassword = await bcrypt.hash(password, 10);
 
-    // let ImgUrl='';
-    // if(ProfileImg){
-    //    ImgUrl =  await  UploadCloudary(ProfileImg)
-    //   console.log(ImgUrl.url);
-    // }
-
-    const newdata = await UserSchema.create({
+    const newUser = await UserSchema.create({
       name,
       email,
-      password,
-      // ProfileImg: ImgUrl.url
-    })
+      password: bcryptPassword,
+      otp: randomOtp
+    });
 
-    return res.status(200).send({ user: newdata, status: true, msg: 'user created successfully ' })
+    return res.status(200).send({ user: newUser, status: true, msg: 'user created successfully ' });
 
-  } catch (e) { return res.status(500).send({ status: false, msg: e.message }) }
-
+  } catch (e) {
+    return res.status(500).send({ status: false, msg: e.message });
+  }
 }
 
 
