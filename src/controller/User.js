@@ -49,32 +49,36 @@ exports.UserCreate = async (req, res) => {
 }
 
 
-
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await UserSchema.findOne({ email });
 
     if (!user) {
-      return res.status(401).send({ message: 'you are not exists ' });
+      return res.status(401).send({ status: false, msg: 'User does not exist' });
+    }
+
+    if (user.isdelete) {
+      return res.status(401).send({ status: false, msg: 'Account is deleted. Please contact admin.' });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
-    console.log(isValidPassword);
+    
     if (!isValidPassword) {
-      return res.status(401).json({ message: 'invailed password' });
+      return res.status(401).send({ status: false, msg: 'Invalid password' });
     }
 
     if (!user.isverify) {
-      return res.status(401).json({ message: 'User not verified' });
+      return res.status(401).send({ status: false, msg: 'User not verified' });
     }
 
     const token = jwt.sign({ Userid: user._id }, process.env.SECRET_KEY, { expiresIn: '12h' });
 
-    return res.status(200).send({ token, status: true, msg: ' login succesfully' })
-  } catch (e) { return res.status(500).send({ status: false, msg: e.message }) }
+    return res.status(200).send({ token, user: userData, status: true, msg: 'Login successfully' });
+  } catch (e) {
+    return res.status(500).send({ status: false, msg: e.message });
+  }
 }
-
 
 
 exports.userdelete = async (req, res) => {
@@ -133,3 +137,22 @@ exports.verifyotp = async (req, res) => {
     return res.status(500).send({ status: false, message: e.message });
   }
 };
+
+
+
+exports.getuser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).send({ status: false, msg: 'User ID is required' });
+    }
+
+    const user = await UserSchema.findById(id);
+    if (!user) {
+      return res.status(404).send({ status: false, msg: 'User not found' });
+    }
+    return res.status(200).send({ status: true, user });
+  } catch (e) {
+    return res.status(400).send({ status: false, msg: 'user not defined', error: e.message });
+  }
+}
