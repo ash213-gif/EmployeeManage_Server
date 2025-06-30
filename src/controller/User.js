@@ -3,26 +3,30 @@ const bcrypt = require('bcrypt')
 require('dotenv').config()
 const jwt = require('jsonwebtoken')
 const { sendmail } = require('../Nodemailer/Mail')
-
+const {UploadCloudary} =require('../Cloundnary/ImageUrl')
 
 exports.UserCreate = async (req, res) => {
   try {
     const data = req.body;
     const { name, email, password } = data;
-    const {ProfileImg}=req.file;
-    console.log(ProfileImg);
+    const ProfileImg = req.file;
+    
 
     if (!name) { return res.status(400).send({ status: false, msg: 'please provide a name ' }) }
     if (!email) { return res.status(400).send({ status: false, msg: 'please provide a email ' }) }
     if (!password) { return res.status(400).send({ status: false, msg: 'please provide a password ' }) }
-if(!ProfileImg) { return res.status(400).send({status:false ,msg:'Image is required ' }) }
+    if (!ProfileImg) { return res.status(400).send({ status: false, msg: 'Image is required ' }) }
+const Finduser = await UserSchema.findOne({ email: email });
 
-    const Finduser = await UserSchema.findOne({ email: email })
-
-    if (Finduser) { return res.status(400).send({ status: false, msg: 'You are alraedy exists' }) }
-    if (Finduser.isverify === true) { return res.status(400).send({ status: false, msg: 'please verify first  ' }) }
-    if (Finduser.isdelete === true) { return res.status(400).send({ status: false, msg: 'you accounst is deleted  ' }) }
-
+if (Finduser) {
+  if (Finduser.isverify === true) {
+    return res.status(400).send({ status: false, msg: 'please verify first' });
+  }
+  if (Finduser.isdelete === true) {
+    return res.status(400).send({ status: false, msg: 'your account is deleted' });
+  }
+  return res.status(400).send({ status: false, msg: 'You already exist' });
+}
     const randomOtp = await Math.floor(100000 + Math.random() * 900000);
     data.otp = randomOtp;
     await sendmail(name, email, randomOtp);
@@ -30,9 +34,17 @@ if(!ProfileImg) { return res.status(400).send({status:false ,msg:'Image is requi
     const bcryptPassword = await bcrypt.hash(password, 10)
     data.password = bcryptPassword
 
+    let ImgUrl='';
+    if(ProfileImg){
+       ImgUrl =  await  UploadCloudary(ProfileImg)
+      console.log(ImgUrl.url);
+    }
 
     const newdata = await UserSchema.create({
-      ProfileImg:ProfileImg.path
+      name,
+      email,
+      password,
+      ProfileImg: ImgUrl.url
     })
 
     return res.status(200).send({ user: newdata, status: true, msg: 'user created successfully ' })
