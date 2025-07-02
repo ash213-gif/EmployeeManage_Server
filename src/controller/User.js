@@ -99,6 +99,32 @@ exports.userdelete = async (req, res) => {
   }
 }
 
+exports.changeRole = async (req, res) => {
+  try {
+    const { id } = req.params; // Get user id from URL params
+    const role='admin'
+
+    if (!id) {
+      return res.status(400).send({ status: false, msg: 'User ID is required' });
+    }
+    
+
+    const updatedUser = await UserSchema.findByIdAndUpdate(
+      id,
+      { $set: { role: role } },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).send({ status: false, msg: 'User not found' });
+    }
+
+    return res.status(200).send({ status: true, msg: 'Role updated successfully', user: updatedUser });
+  } catch (e) {
+    return res.status(500).send({ status: false, msg: e.message });
+  }
+};
+
 
 exports.verifyotp = async (req, res) => {
   try {
