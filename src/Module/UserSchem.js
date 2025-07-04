@@ -8,7 +8,7 @@ const UserSchem = new mongoose.Schema({
     otp: { type: String,  trim:true  },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     isverify: { type: Boolean, default: false },
-    isdelete: { type: Boolean, default: false }
-})
+    isdelete: { type: Boolean, default: false },
+Tasks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Task' }]})
 
 module.exports = mongoose.model('Userdata', UserSchem)

@@ -13,15 +13,39 @@ exports.getTask = async (req, res) => {
 }
 
 
+const User = require('../Module/UserSchem');
 exports.createTask = async (req, res) => {
     try {
         const Data = req.body;
-        const { title, description } = Data;
-        if (!title || !description) { return res.status(400).send({ status: false, msg: 'Title and description are required' }) }
+        const { title, description, userId } = Data;
+        if (!title || !description || !userId) {
+            return res.status(400).send({ status: false, msg: 'Title, description, and userId are required' });
+        }
 
-        const newTask =  await  new task(Data)
-       await newTask.save();
-      return  res.status(201).send({data:newTask, status:true, msg:'task created successfully ' });
+        // Create the new task
+        const newTask = await new task({ title, description });
+        await newTask.save();
+
+        // Assign the task to the user
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            { $push: { Tasks: newTask._id } },
+            { new: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).send({ status: false, msg: 'User not found, but task created' });
+        }
+
+        // (Optional) Get the user with populated tasks
+        const userWithTasks = await User.findById(userId).populate('Tasks');
+
+        return res.status(201).send({
+            data: newTask,
+            status: true,
+            msg: 'Task created and assigned to user successfully',
+           user: userWithTasks // Uncomment if you want to return user with tasks
+        });
     } catch (e) {
         console.error("Error creating task:", e);
         res.status(500).send({ status: false, msg: e.message });
@@ -64,3 +88,4 @@ exports.UpdateTask = async (req, res) => {
   } catch (e) {
     return res.status(500).send({ status: false, msg: e.message });
   }}
+
