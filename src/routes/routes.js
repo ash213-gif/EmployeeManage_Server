@@ -1,6 +1,6 @@
 const express = require('express');
 const route= express.Router()
-const {UserCreate ,login ,userdelete ,  changeRole ,verifyotp , getuser } =require('../controller/User')
+const {UserCreate ,login ,userdelete ,  changeRole , resendotp ,verifyotp , getuser } =require('../controller/User')
 const multer = require('multer');
 const router = require('./taskrooutes');
 
@@ -17,6 +17,7 @@ route.post('/verifyotp/:id' ,verifyotp )
 route.delete('/deleteUser/:id', userdelete);
 route.get('/getuser/:id' , getuser)
 route.put('/changeRole/:id',changeRole)
+route.put('/resendotp' , resendotp)
 
 route.get('/',(req,res)=>{
     res.send('my routes my first api')

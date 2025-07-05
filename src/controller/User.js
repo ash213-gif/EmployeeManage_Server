@@ -63,7 +63,7 @@ exports.login = async (req, res) => {
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
-    
+
     if (!isValidPassword) {
       return res.status(401).send({ status: false, msg: 'Invalid password' });
     }
@@ -74,7 +74,7 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign({ Userid: user._id }, process.env.SECRET_KEY, { expiresIn: '12h' });
 
-    return res.status(200).send({ token, user:user  , status: true, msg: 'Login successfully' });
+    return res.status(200).send({ token, user: user, status: true, msg: 'Login successfully' });
   } catch (e) {
     return res.status(500).send({ status: false, msg: e.msg });
   }
@@ -102,12 +102,12 @@ exports.userdelete = async (req, res) => {
 exports.changeRole = async (req, res) => {
   try {
     const { id } = req.params; // Get user id from URL params
-    const role='admin'
+    const role = 'admin'
 
     if (!id) {
       return res.status(400).send({ status: false, msg: 'User ID is required' });
     }
-    
+
 
     const updatedUser = await UserSchema.findByIdAndUpdate(
       id,
@@ -180,5 +180,34 @@ exports.getuser = async (req, res) => {
     return res.status(200).send({ status: true, user });
   } catch (e) {
     return res.status(400).send({ status: false, msg: 'user not defined', error: e.message });
+  }
+}
+exports.resendotp = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).send({ status: false, msg: 'id not found' });
+    }
+
+  
+    const resendotp = Math.floor(100000 + Math.random() * 900000);
+
+    const updatedUser = await UserSchema.findByIdAndUpdate(
+      id,
+      { otp: resendotp },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).send({ status: false, msg: 'User not found' });
+    }
+
+  
+      await sendmail(name, email, resendotp);
+
+
+    return res.status(200).send({ status: true, msg: 'OTP resent successfully', otp: resendotp });
+  } catch (e) {
+    return res.status(500).send({ status: false, msg: e.message });
   }
 }
