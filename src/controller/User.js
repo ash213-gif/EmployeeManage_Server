@@ -1,9 +1,8 @@
-const UserSchema = require('../Module/UserSchem')
-const bcrypt = require('bcrypt')
-require('dotenv').config()
-const jwt = require('jsonwebtoken')
-const { sendmail } = require('../Nodemailer/Mail')
-
+const UserSchema = require("../Module/UserSchem");
+const bcrypt = require("bcrypt");
+require("dotenv").config();
+const jwt = require("jsonwebtoken");
+const { sendmail } = require("../Nodemailer/Mail");
 
 exports.UserCreate = async (req, res) => {
   try {
@@ -11,21 +10,34 @@ exports.UserCreate = async (req, res) => {
     const { name, email, password } = data;
     // const ProfileImg = req.file ? req.file.path : undefined;
 
-    if (!name) return res.status(400).send({ status: false, msg: 'please provide a name ' });
-    if (!email) return res.status(400).send({ status: false, msg: 'please provide a email ' });
-    if (!password) return res.status(400).send({ status: false, msg: 'please provide a password ' });
+    if (!name)
+      return res
+        .status(400)
+        .send({ status: false, msg: "please provide a name " });
+    if (!email)
+      return res
+        .status(400)
+        .send({ status: false, msg: "please provide a email " });
+    if (!password)
+      return res
+        .status(400)
+        .send({ status: false, msg: "please provide a password " });
     // if (!ProfileImg) return res.status(400).send({ status: false, msg: 'Image is required ' });
 
     const Finduser = await UserSchema.findOne({ email: email });
 
     if (Finduser) {
       if (Finduser.isverify === true) {
-        return res.status(400).send({ status: false, msg: 'please verify first' });
+        return res
+          .status(400)
+          .send({ status: false, msg: "please verify first" });
       }
       if (Finduser.isdelete === true) {
-        return res.status(400).send({ status: false, msg: 'your account is deleted' });
+        return res
+          .status(400)
+          .send({ status: false, msg: "your account is deleted" });
       }
-      return res.status(400).send({ status: false, msg: 'You already exist' });
+      return res.status(400).send({ status: false, msg: "You already exist" });
     }
 
     const randomOtp = Math.floor(100000 + Math.random() * 900000);
@@ -38,16 +50,16 @@ exports.UserCreate = async (req, res) => {
       name,
       email,
       password: bcryptPassword,
-      otp: randomOtp
+      otp: randomOtp,
     });
 
-    return res.status(200).send({ user: newUser, status: true, msg: 'user created successfully ' });
-
+    return res
+      .status(200)
+      .send({ user: newUser, status: true, msg: "user created successfully " });
   } catch (e) {
     return res.status(500).send({ status: false, msg: e.message });
   }
-}
-
+};
 
 exports.login = async (req, res) => {
   try {
@@ -55,31 +67,39 @@ exports.login = async (req, res) => {
     const user = await UserSchema.findOne({ email });
 
     if (!user) {
-      return res.status(401).send({ status: false, msg: 'User does not exist' });
+      return res
+        .status(401)
+        .send({ status: false, msg: "User does not exist" });
     }
 
     if (user.isdelete) {
-      return res.status(401).send({ status: false, msg: 'Account is deleted. Please contact admin.' });
+      return res.status(401).send({
+        status: false,
+        msg: "Account is deleted. Please contact admin.",
+      });
     }
 
     const isValidPassword = await bcrypt.compare(password, user.password);
 
     if (!isValidPassword) {
-      return res.status(401).send({ status: false, msg: 'Invalid password' });
+      return res.status(401).send({ status: false, msg: "Invalid password" });
     }
 
     if (!user.isverify) {
-      return res.status(401).send({ status: false, msg: 'User not verified' });
+      return res.status(401).send({ status: false, msg: "User not verified" });
     }
 
-    const token = jwt.sign({ Userid: user._id }, process.env.SECRET_KEY, { expiresIn: '12h' });
+    const token = jwt.sign({ Userid: user._id }, process.env.SECRET_KEY, {
+      expiresIn: "12h",
+    });
 
-    return res.status(200).send({ token, user: user, status: true, msg: 'Login successfully' });
+    return res
+      .status(200)
+      .send({ token, user: user, status: true, msg: "Login successfully" });
   } catch (e) {
     return res.status(500).send({ status: false, msg: e.msg });
   }
-}
-
+};
 
 exports.userdelete = async (req, res) => {
   try {
@@ -87,27 +107,30 @@ exports.userdelete = async (req, res) => {
     const user = await UserSchema.findById(id);
 
     if (!user) {
-      return res.status(404).send({ status: false, msg: 'User not found' });
+      return res.status(404).send({ status: false, msg: "User not found" });
     }
 
     user.isdelete = true;
     await user.save();
 
-    return res.status(200).send({ status: true, msg: 'User deleted successfully' });
+    return res
+      .status(200)
+      .send({ status: true, msg: "User deleted successfully" });
   } catch (e) {
     return res.status(500).send({ status: false, msg: e.message });
   }
-}
+};
 
 exports.changeRole = async (req, res) => {
   try {
     const { id } = req.params; // Get user id from URL params
-    const role = 'admin'
+    const role = "admin";
 
     if (!id) {
-      return res.status(400).send({ status: false, msg: 'User ID is required' });
+      return res
+        .status(400)
+        .send({ status: false, msg: "User ID is required" });
     }
-
 
     const updatedUser = await UserSchema.findByIdAndUpdate(
       id,
@@ -116,15 +139,18 @@ exports.changeRole = async (req, res) => {
     );
 
     if (!updatedUser) {
-      return res.status(404).send({ status: false, msg: 'User not found' });
+      return res.status(404).send({ status: false, msg: "User not found" });
     }
 
-    return res.status(200).send({ status: true, msg: 'Role updated successfully', user: updatedUser });
+    return res.status(200).send({
+      status: true,
+      msg: "Role updated successfully",
+      user: updatedUser,
+    });
   } catch (e) {
     return res.status(500).send({ status: false, msg: e.message });
   }
 };
-
 
 exports.verifyotp = async (req, res) => {
   try {
@@ -132,64 +158,86 @@ exports.verifyotp = async (req, res) => {
     const { otp } = req.body;
 
     if (!id) {
-      return res.status(400).send({ status: false, msg: 'id is required' });
+      return res.status(400).send({ status: false, msg: "id is required" });
     }
     if (!otp) {
-      return res.status(400).send({ status: false, msg: 'otp is required' });
+      return res.status(400).send({ status: false, msg: "otp is required" });
     }
 
     const checkuser = await UserSchema.findById(id);
 
     if (!checkuser) {
-      return res.status(400).send({ status: false, msg: 'user not found' });
+      return res.status(400).send({ status: false, msg: "user not found" });
     }
 
     if (checkuser.isverify === true) {
-      return res.status(400).send({ status: false, msg: 'you are already verified please login ' });
+      return res
+        .status(400)
+        .send({ status: false, msg: "you are already verified please login " });
     }
     if (checkuser.isdelete === true) {
-      return res.status(400).send({ status: false, msg: 'you account is deleted please contact admin' });
+      return res.status(400).send({
+        status: false,
+        msg: "you account is deleted please contact admin",
+      });
     }
 
-
     if (checkuser.otp !== otp) {
-      return res.status(400).send({ status: false, msg: 'wrong otp' });
+      return res.status(400).send({ status: false, msg: "wrong otp" });
     }
 
     await UserSchema.findByIdAndUpdate(id, { isverify: true }, { new: true });
     await checkuser.save();
-    return res.status(200).send({ status: true, msg: 'OTP verified successfully' });
+    return res
+      .status(200)
+      .send({ status: true, msg: "OTP verified successfully" });
   } catch (e) {
     return res.status(500).send({ status: false, message: e.message });
   }
 };
 
-
-
 exports.getuser = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
-      return res.status(400).send({ status: false, msg: 'User ID is required' });
+      return res
+        .status(400)
+        .send({ status: false, msg: "User ID is required" });
     }
 
     const user = await UserSchema.findById(id);
     if (!user) {
-      return res.status(404).send({ status: false, msg: 'User not found' });
+      return res.status(404).send({ status: false, msg: "User not found" });
     }
     return res.status(200).send({ status: true, user });
   } catch (e) {
-    return res.status(400).send({ status: false, msg: 'user not defined', error: e.message });
+    return res
+      .status(400)
+      .send({ status: false, msg: "user not defined", error: e.message });
   }
-}
+};
+
+exports.getusers = async (req, res) => {
+  try {
+    const getusers = await UserSchema.find();
+    if (!getusers) {
+      return res.status(400).send({ status: false, msg: "user not found " });
+    }
+    
+    return res.status(200).send({ status:true ,getusers  })
+
+  } catch (e) {
+    return res.status(500).send({ status: false, message: e.msg });
+  }
+};
+
 exports.resendotp = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) {
-      return res.status(400).send({ status: false, msg: 'id not found' });
+      return res.status(400).send({ status: false, msg: "id not found" });
     }
 
-  
     const resendotp = Math.floor(100000 + Math.random() * 900000);
 
     const updatedUser = await UserSchema.findByIdAndUpdate(
@@ -199,15 +247,15 @@ exports.resendotp = async (req, res) => {
     );
 
     if (!updatedUser) {
-      return res.status(404).send({ status: false, msg: 'User not found' });
+      return res.status(404).send({ status: false, msg: "User not found" });
     }
 
-  
-      await sendmail(name, email, resendotp);
+    await sendmail(name, email, resendotp);
 
-
-    return res.status(200).send({ status: true, msg: 'OTP resent successfully', otp: resendotp });
+    return res
+      .status(200)
+      .send({ status: true, msg: "OTP resent successfully", otp: resendotp });
   } catch (e) {
     return res.status(500).send({ status: false, msg: e.message });
   }
-}
+};

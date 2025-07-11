@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const task = require('../Module/TaskSchema');
+const User = require('../Module/UserSchem');
 
 exports.getTask = async (req, res) => {
     try {
@@ -13,14 +14,9 @@ exports.getTask = async (req, res) => {
 }
 
 
-const User = require('../Module/UserSchem');
 exports.createTask = async (req, res) => {
     try {
-        const Data = req.body;
-        const { title, description, userId } = Data;
-        if (!title || !description || !userId) {
-            return res.status(400).send({ status: false, msg: 'Title, description, and userId are required' });
-        }
+        
 
         // Create the new task
         const newTask = await new task({ title, description });
