@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 
-const {getTask,createTask ,deleteTask,UpdateTask  , getMonthlyTaskCount}=require('../controller/TaskControl');
+const {getTask,createTask ,deleteTask,UpdateTask  , getTaskCounts}=require('../controller/TaskControl');
 const {TaskAuth }=require('../Middleware/AuthTask')
 
 router.get('/tasks', getTask);
@@ -11,7 +11,7 @@ router.put('/updateTask/:id', UpdateTask);
 
 //  monthly count 
 
-router.get('/getMonthlyTaskCount/:userId/:year/:month', getMonthlyTaskCount);
+router.get('/getTaskCounts/:userId/:year/:month/:day', getTaskCounts);
 
 module.exports = router;
 

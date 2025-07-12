@@ -2,6 +2,8 @@ const express = require("express");
 const app = express();
 const task = require("../Module/TaskSchema");
 const User = require("../Module/UserSchem");
+const mongoose = require("mongoose");
+
 
 exports.getTask = async (req, res) => {
   try {
@@ -93,31 +95,49 @@ exports.UpdateTask = async (req, res) => {
 };
 
 // get monthly task count
-
-exports.getMonthlyTaskCount = async (req, res) => {
+exports.getTaskCounts = async (req, res) => {
   try {
-    const { userId, year, month } = req.params;
+    const { userId, year, month, day } = req.params;
 
-    const startDate = new Date(year, month - 1, 1);
-    const endDate = new Date(year, month, 1);
+    // Validate userId
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).send({ status: false, msg: "Invalid user ID" });
+    }
 
+    // Calculate dates
+    const currentDate = new Date();
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 1);
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year + 1, 0, 1);
+    const startOfDay = new Date(year, month - 1, day);
+    const endOfDay = new Date(year, month - 1, day + 1);
 
-    const taskCount = await task.countDocuments({
-      assignedTo: userId,
-      createdAt: { $gte: startDate, $lt: endDate },
-    });
-
-    console.log(taskCount);
-
+    // Fetch task counts
+    const [monthlyTaskCount, dailyTaskCount, yearlyTaskCount] = await Promise.all([
+      task.countDocuments({
+        assignedTo: userId,
+        createdAt: { $gte: startOfMonth, $lt: endOfMonth },
+      }),
+      task.countDocuments({
+        assignedTo: userId,
+        createdAt: { $gte: startOfDay, $lt: endOfDay },
+      }),
+      task.countDocuments({
+        assignedTo: userId,
+        createdAt: { $gte: startOfYear, $lt: endOfYear },
+      }),
+    ]);
 
     return res.status(200).send({
       status: true,
-      msg: "Task count fetched successfully",
-      taskCount: taskCount,
+      msg: "Task counts fetched successfully",
+      monthlyTaskCount,
+      dailyTaskCount,
+      yearlyTaskCount,
     });
-    
-  } catch (e) {
-    console.error("Error fetching task count:", e);
-    return res.status(500).send({ status: false, msg: e.message });
+  } catch (error) {
+    console.error("Error fetching task counts:", error);
+    return res.status(500).send({ status: false, msg: error.message });
   }
 };
