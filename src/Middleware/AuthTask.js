@@ -1,12 +1,13 @@
 exports.TaskAuth = (req, res ,next  ) => {
   try {
     const Data = req.body;
-    const { title, description, userId } = Data;
+    const { title, description ,assignedTo,deadline } = Data;
 
-    if (!title ) { return res.status(400).send({ status:false , msg: 'tile is required'  })    }
-    if (!description ) { return res.status(400).send({ status:false , msg: 'description is required'  })    }
-    if (!userId ) { return res.status(400).send({ status:false , msg: 'userId is required'  })    }
-
+    if (!title ) { return res.status(400).send({ status:false , msg: 'title is required'  })    }
+    if (!description ) { return res.status(400).send({ status:false , msg: 'description is required'  })}
+    if (!assignedTo ) { return res.status(400).send({ status:false , msg: 'assignedTo is required'  })}
+    if (!deadline ) { return res.status(400).send({ status:false , msg: 'deadline is required'  })}
+    
     next()
 
   } catch (e) {
