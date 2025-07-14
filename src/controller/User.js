@@ -97,6 +97,7 @@ exports.login = async (req, res) => {
       .status(200)
       .send({ token, user: user, status: true, msg: "Login successfully" });
   } catch (e) {
+    console.log(e);
     return res.status(500).send({ status: false, msg: e.msg });
   }
 };
