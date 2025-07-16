@@ -3,11 +3,10 @@ const app = express.Router()
 
 // Import routes
 const {authenticateToken} =require('../verifytoken/VerifyToken');
-const {chatroom , getMessages ,chatstart , sendMessage }=require('../controller/ChatRoom');
+const {createChat,getmessages }=require('../controller/ChatRoom');
 
-app.get('/chatroom', chatroom);
-app.get('/getMessages/:roomId', authenticateToken, getMessages);
-app.post('/chatstart', authenticateToken, chatstart);
-app.post('/sendMessage', authenticateToken, sendMessage);
+app.post('/createChat', createChat);
+app.post('/getmessages', getmessages);
+
 
 module.exports = app;

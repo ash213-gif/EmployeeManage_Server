@@ -3,107 +3,71 @@ const Message = require("../Module/MessageSchem");
 const ChatRoom = require("../Module/ChatRoomSchema");
 const User = require("../Module/UserSchem");
 
-// chat room setup
+exports.createChat = async (req, res) => {
+    try {
+        const { senderId, receiverId, message } = req.body;
 
-exports.chatroom = async (req, res) => {
-  try {
-    const { userId, role } = req.query;
+        // Validate input
+        if (!senderId || !receiverId || !message) {
+            return res.status(400).send({ status: false, msg: "All fields are required" });
+        }
 
-    let chatRooms;
-    if (role === "admin") {
-      chatRooms = await ChatRoom.find({ adminId: userId })
-        .populate("userId", "username email")
-        .sort({ lastMessageTime: -1 });
-    } else {
-      chatRooms = await ChatRoom.find({ userId })
-        .populate("adminId", "username email")
-        .sort({ lastMessageTime: -1 });
+        // Check if sender exists
+        const sender = await User.findById(senderId);
+        if (!sender) {
+            return res.status(404).send({ status: false, msg: "Sender not found" });
+        }
+
+        // Create a new message
+        const messageData = new Message({ UserId: senderId, message }); // Use UserId for consistency
+        await messageData.save();
+
+        // Find existing chat room
+        let chatRoom = await ChatRoom.findOne({
+            participants: { $all: [senderId, receiverId], $size: 2 }
+        });
+
+        // Update existing chat room or create a new one
+        if (chatRoom) {
+            // Update the chat room with the new message ID
+            chatRoom.messages.push(messageData._id); // Add the message ID to the messages array
+            chatRoom.lastMessage = message;
+            chatRoom.lastMessageTime = new Date();
+            await chatRoom.save(); // Save the updated chat room
+        } else {
+            // Create a new chat room
+            chatRoom = new ChatRoom({
+                participants: [senderId, receiverId],
+                messages: [messageData._id], // Start with the first message
+                lastMessage: message,
+                lastMessageTime: new Date()
+            });
+            await chatRoom.save(); // Save the new chat room
+        }
+
+        // Send response
+        return res.status(201).send({ status: true, data: messageData, chatRoom: chatRoom });
+    } catch (e) {
+        console.log(e);
+        res.status(500).send({ status: false, msg: e.message });
     }
-
-    res.send(chatRooms);
-  } catch (e) {
-    return res.status(500).send({ status: false, msg: e.message });
-  }
 };
 
-// get message from user to admin  ... pending code
-exports.getMessages = async (req, res) => {
-  try {
-    const { roomId } = req.params;
-    const { Userid } = req.user;
 
-    const chatRoom = await ChatRoom.findById(roomId);
-    if (
-      !chatRoom ||
-      (chatRoom.userId.toString() !== userId &&
-        chatRoom.adminId.toString() !== userId)
-    ) {
-      return res.status(403).json({ error: "Access denied" });
-    }
+exports.getmessages = async (req, res) => {
+  try{
 
-    const messages = await Message.find({
-      $or: [
-        { senderId: chatRoom.userId, receiverId: chatRoom.adminId },
-        { senderId: chatRoom.adminId, receiverId: chatRoom.userId },
-      ],
-    })
-      .populate("senderId", "username")
-      .populate("receiverId", "username")
-      .sort({ timestamp: 1 });
+    const { senderId, receiverId } = req.body;
+     if(!senderId || !receiverId) {  return res.status(400).send({ status: false, msg: "All fields are required" }); }
 
-    res.json(messages);
-  } catch (e) {
+     const chatRoom = await ChatRoom.findOne({ participants: { $all: [senderId, receiverId], $size: 2 } }).populate('messages');
+
+     if(!chatRoom) { return res.status(404).send({ status: false, msg: "Chat room not found" }); }
+      
+     return res.status(200).send({ status: true, data: chatRoom.messages });  
+
+
+  }catch(e) { 
     console.log(e);
-    return res.status(500).send({ status: false, msg: e.message });
-  }
-};
-
-// send messge start chat
-
-exports.chatstart = async (req, res) => {
-  try {
-    const { adminId } = req.body;
-    const { Userid } = req.user;
-
-    let chatRoom = await ChatRoom.findOne({ Userid, adminId });
-    if (!chatRoom) {
-      chatRoom = new ChatRoom({ Userid, adminId });
-      await chatRoom.save();
-    }
-
-    res.send(chatRoom);
-  } catch (e) {
-    console.log(e);
-    return res.status(500).send({ status: false, msg: e.message });
-  }
-};
-
-exports.sendMessage = async (req, res) => {
-  try {
-    const { senderId, receiverId, message, roomId } = req.body;
-
-    // Save message to database
-    const newMessage = new Message({
-      senderId,
-      receiverId,
-      message,
-    });
-    await newMessage.save();
-
-    // Update chat room
-    await ChatRoom.findByIdAndUpdate(roomId, {
-      lastMessage: message,
-      lastMessageTime: new Date(),
-    });
-
-    // Populate sender info
-    const populatedMessage = await Message.findById(newMessage._id)
-      .populate("senderId", "username")
-      .populate("receiverId", "username");
-
-    res.send(populatedMessage);
-  } catch (e) {
-    console.log(e);
-    return res.status(500).send({ status: false, msg: e.message });
-  }
-};
+    return res.status(500).send({ status: false, msg: e.message }) }
+}
