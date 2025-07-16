@@ -53,21 +53,23 @@ exports.createChat = async (req, res) => {
     }
 };
 
-
 exports.getmessages = async (req, res) => {
-  try{
+  try {
+    const { senderId, receiverId } = req.body; // Expecting body parameters
+    if (!senderId || !receiverId) {
+      return res.status(400).send({ status: false, msg: "All fields are required" });
+    }
 
-    const { senderId, receiverId } = req.body;
-     if(!senderId || !receiverId) {  return res.status(400).send({ status: false, msg: "All fields are required" }); }
+    const chatRoom = await ChatRoom.findOne({ participants: { $all: [senderId, receiverId], $size: 2 } }).populate('messages');
 
-     const chatRoom = await ChatRoom.findOne({ participants: { $all: [senderId, receiverId], $size: 2 } }).populate('messages');
+    if (!chatRoom) {
+      return res.status(404).send({ status: false, msg: "Chat room not found" });
+    }
 
-     if(!chatRoom) { return res.status(404).send({ status: false, msg: "Chat room not found" }); }
-      
-     return res.status(200).send({ status: true, data: chatRoom.messages });  
+    return res.status(200).send({ status: true, data: chatRoom.messages });
 
-
-  }catch(e) { 
+  } catch (e) {
     console.log(e);
-    return res.status(500).send({ status: false, msg: e.message }) }
+    return res.status(500).send({ status: false, msg: e.message });
+  }
 }
