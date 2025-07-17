@@ -1,6 +1,8 @@
+
 const express = require("express");
-const Message = require("../Module/MessageSchem");
+const mongoose = require("mongoose");
 const ChatRoom = require("../Module/ChatRoomSchema");
+const Message = require("../Module/MessageSchem");
 const User = require("../Module/UserSchem");
 
 exports.createChat = async (req, res) => {
@@ -19,7 +21,7 @@ exports.createChat = async (req, res) => {
         }
 
         // Create a new message
-        const messageData = new Message({ UserId: senderId, message }); // Use UserId for consistency
+        const messageData = new Message({ senderId, receiverId, message }); // Include receiverId
         await messageData.save();
 
         // Find existing chat room
@@ -29,16 +31,15 @@ exports.createChat = async (req, res) => {
 
         // Update existing chat room or create a new one
         if (chatRoom) {
-            // Update the chat room with the new message ID
-            chatRoom.messages.push(messageData._id); // Add the message ID to the messages array
+            chatRoom.messages.push(messageData._id); 
             chatRoom.lastMessage = message;
             chatRoom.lastMessageTime = new Date();
             await chatRoom.save(); // Save the updated chat room
         } else {
-            // Create a new chat room
+           
             chatRoom = new ChatRoom({
                 participants: [senderId, receiverId],
-                messages: [messageData._id], // Start with the first message
+                messages: [messageData._id],
                 lastMessage: message,
                 lastMessageTime: new Date()
             });
@@ -54,22 +55,26 @@ exports.createChat = async (req, res) => {
 };
 
 exports.getmessages = async (req, res) => {
-  try {
-    const { senderId, receiverId } = req.body; // Expecting body parameters
-    if (!senderId || !receiverId) {
-      return res.status(400).send({ status: false, msg: "All fields are required" });
+    try {
+        const { senderId } = req.params;
+        const { receiverId } = req.query;
+
+        if (!receiverId) {
+            return res.status(400).send({ status: false, msg: "ReceiverId is required" });
+        }
+
+        const chatRoom = await ChatRoom.findOne({
+            participants: { $all: [senderId, receiverId], $size: 2 }
+        }).populate('messages');
+
+        if (!chatRoom) {
+            return res.status(200).send({ status: true, data: [] });
+        }
+
+        return res.status(200).send({ status: true, data: chatRoom.messages }); // Corrected to use `messages`
+
+    } catch (e) {
+        console.log(e);
+        return res.status(500).send({ status: false, msg: e.message });
     }
-
-    const chatRoom = await ChatRoom.findOne({ participants: { $all: [senderId, receiverId], $size: 2 } }).populate('messages');
-
-    if (!chatRoom) {
-      return res.status(404).send({ status: false, msg: "Chat room not found" });
-    }
-
-    return res.status(200).send({ status: true, data: chatRoom.messages });
-
-  } catch (e) {
-    console.log(e);
-    return res.status(500).send({ status: false, msg: e.message });
-  }
-}
+};

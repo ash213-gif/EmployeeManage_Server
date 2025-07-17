@@ -6,7 +6,7 @@ const {authenticateToken} =require('../verifytoken/VerifyToken');
 const {createChat,getmessages }=require('../controller/ChatRoom');
 
 app.post('/createChat', createChat);
-app.get('/getmessages', getmessages);
+app.get('/getmessages/:senderId', getmessages);
 
 
 module.exports = app;
