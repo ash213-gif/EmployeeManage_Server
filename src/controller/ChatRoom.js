@@ -53,8 +53,7 @@ exports.createChat = async (req, res) => {
         res.status(500).send({ status: false, msg: e.message });
     }
 };
-const ChatRoom = require('../Module/ChatRoomSchema');
-const Message = require('../Module/MessageSchem');
+
 
 exports.getmessages = async (req, res) => {
     try {
