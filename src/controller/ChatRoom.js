@@ -53,6 +53,8 @@ exports.createChat = async (req, res) => {
         res.status(500).send({ status: false, msg: e.message });
     }
 };
+const ChatRoom = require('../Module/ChatRoomSchema');
+const Message = require('../Module/MessageSchem');
 
 exports.getmessages = async (req, res) => {
     try {
@@ -65,13 +67,16 @@ exports.getmessages = async (req, res) => {
 
         const chatRoom = await ChatRoom.findOne({
             participants: { $all: [senderId, receiverId], $size: 2 }
-        }).populate('messages');
+        }).populate({
+            path: 'messages',
+            options: { sort: { 'createdAt': 1 } }
+        });
 
         if (!chatRoom) {
             return res.status(200).send({ status: true, data: [] });
         }
 
-        return res.status(200).send({ status: true, data: chatRoom.messages }); // Corrected to use `messages`
+        return res.status(200).send({ status: true, data: chatRoom.messages });
 
     } catch (e) {
         console.log(e);
